@@ -1,0 +1,15 @@
+am implementat toate cerintele
+
+La fiecare pachet primit, verific mai intai tipul sau: IP sau ARP
+In cazul unui pachet IP, verific daca destinatia este routerul, caz in care trimit icmp echo reply (copiez pachetul primit, apoi schimb adresele mac, adresele ip si tipul icmp, apoi trimit pe aceeasi interfata)
+
+Daca destinatia nu este routerul, continui cu pasii din sectiunea ipv4 (verific checksum, ttl, caut in tabela de rutare, actualizez checksum). La pasul in care trebuie rescrise adresele MAC, in caz ca acesta nu se afla in cache, pun pachetul in coada
+(am definit structura queued_packet pentru a retine si next hop si lungimea pachetului), si trimit un ARP request pentru adresa IP next hop. Daca adresa MAC este deja in cache, trimit direct pachetul.
+
+In cazul unui pachet ARP, verific daca tipul este ARP request, caz in care trimit ARP reply (copiez pachetul primit, apoi schimb adresele mac, adresele ip si tipul arp, apoi trimit pe aceeasi interfata).
+Daca tipul este ARP reply, actualizez cache-ul ARP si iterez prin coada de pachete in asteptare, trimitand pachetele pentru care
+pot gasi acum adresa MAC.
+
+In cazul ICMP Time Exceeded sau Destination Unreachable, construiesc un pachet ICMP conform regulilor descrise si il trimit pe aceeasi interfata pe unde a venit.
+
+Pentru cautarea lui next_hop am folosit trie (din radacina se merge din nod in nod fie pe copilul '1' fie pe copilul '0', in functie de bitul curent din adresa IP, pana cand se ajunge la o frunza, care contine next_hop-ul).
